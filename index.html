@@ -74,6 +74,20 @@ gemma --logs            # every conversation and rig log</code></pre>
 <tr><td><code>quality</code> (default)</td><td>26B FP8 + expert offload</td><td>180 tok/s</td><td>32k</td><td>79,572</td><td><span class="win">82.9% ✓</span></td></tr>
 <tr><td><code>smart</code></td><td>31B dense NVFP4</td><td>63 tok/s</td><td>32k</td><td>115,742</td><td><span class="win">83.7% ✓</span></td></tr>
 </table>
+<h3>Exact checkpoints behind the labels</h3>
+<table>
+<tr><th>Use</th><th>Checkpoint</th></tr>
+<tr><td>sweep: E2B</td><td><a href="https://huggingface.co/unsloth/gemma-4-E2B-it-NVFP4"><code>unsloth/gemma-4-E2B-it-NVFP4</code></a></td></tr>
+<tr><td>sweep: E4B</td><td><a href="https://huggingface.co/unsloth/gemma-4-E4B-it-NVFP4"><code>unsloth/gemma-4-E4B-it-NVFP4</code></a></td></tr>
+<tr><td>sweep: 12B</td><td><a href="https://huggingface.co/unsloth/gemma-4-12b-it-NVFP4"><code>unsloth/gemma-4-12b-it-NVFP4</code></a></td></tr>
+<tr><td><code>fast</code></td><td><a href="https://huggingface.co/unsloth/gemma-4-26B-A4B-it-NVFP4"><code>unsloth/gemma-4-26B-A4B-it-NVFP4</code></a></td></tr>
+<tr><td><code>quality</code></td><td><a href="https://huggingface.co/RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic"><code>RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic</code></a></td></tr>
+<tr><td><code>smart</code></td><td><a href="https://huggingface.co/RedHatAI/gemma-4-31B-it-NVFP4"><code>RedHatAI/gemma-4-31B-it-NVFP4</code></a></td></tr>
+</table>
+<div class="note">The result tables below are historical measurements made with
+<code>BENCH=1</code> and FP8 KV cache. The daily launcher now defaults to
+<code>turboquant_4bit_nc</code> (and 14 GiB CPU offload for <code>quality</code>);
+those defaults are not substituted into old benchmark rows.</div>
 <p>The 31B is dense — all 60 layers are read for every token, where the MoE reads
 only its 8 active experts. That is the entire 3x speed difference. It also uses
 <em>less</em> VRAM than the FP8 26B (19.8 vs 27 GiB) and gives the largest KV
@@ -158,7 +172,9 @@ ceiling down (12 → 8 → 4 → 0). 17 fixes in one session fails; four passes 
 </ul>
 
 <h2>Her tools</h2>
-<p>She has these in every session, and her prompt tells her when to reach for each.</p>
+<p>She has these in every session, and her prompt tells her when to reach for each.
+Gemini CLI receives the same core tools through the <code>rig-tools</code> MCP
+server registered by <code>gemini-extension.json</code>.</p>
 <pre><code>web.py search "how does X work"      find pages
 web.py read &lt;url&gt;                    read one as text
 web.py images "a red fox"            find images
@@ -175,7 +191,19 @@ unit_status.py                       run the real gate, say what is missing</cod
 <code>scripts/skills/</code> — add a line to <code>SKILL.md</code> and it is
 available from then on.</p>
 
-<div class="note"><b>Offline:</b> the model, her tools and 225 session transcripts
+<h3>CodeGraph for indexed repositories</h3>
+<p>CodeGraph is a workspace-side CLI, not part of the model weights. It returns
+the relevant symbol source, call paths and change blast radius before the agent
+starts editing. The current Harness index contains 96 files, 962 nodes and
+2,005 relationships.</p>
+<pre><code>codegraph init
+codegraph explore "how does a Gemini request reach vLLM?"
+codegraph sync</code></pre>
+<div class="note"><code>.codegraph/</code> is derived SQLite data and stays out
+of Git. On WSL repositories under <code>/mnt</code>, refresh it with
+<code>codegraph sync</code> or the Git hook rather than relying on file watching.</div>
+
+<div class="note"><b>Offline:</b> the model, her tools and 247 session transcripts
 are all local. <code>web.py save</code> the docs she depends on and she keeps
 working with no connection.</div>
 
@@ -318,9 +346,12 @@ every feature Google ships arrives for free. Nothing here is a fork to maintain.
 <p>It works because the CLI honours <code>GOOGLE_GEMINI_BASE_URL</code>. Point it at
 a small Rust process that speaks Gemini REST at the front and OpenAI at the back:</p>
 <pre><code>gemma --boot                                    # vLLM on :8891
-gemma-gateway --listen 127.0.0.1:8899 --upstream http://127.0.0.1:8891/v1 \
-              --model gemma-4-26b-a4b
-GEMINI_API_KEY=local GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:8899 gemini</code></pre>
+gemma-gateway --listen 127.0.0.1:8899 --upstream http://127.0.0.1:8891/v1
+GEMINI_API_KEY=local GEMINI_CLI_TRUST_WORKSPACE=true \
+GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:8899 gemini</code></pre>
+<p>With no <code>--model</code>, the gateway discovers the model from vLLM's
+<code>/models</code> endpoint and follows profile switches. Pin
+<code>--model</code> only when the gateway fronts a separately fixed server.</p>
 
 <div class="note">Two settings are needed once, in <code>~/.gemini/settings.json</code>:
 <code>security.auth.selectedType: "gemini-api-key"</code>, because the CLI has a
@@ -328,6 +359,13 @@ GEMINI_API_KEY=local GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:8899 gemini</code><
 <code>validateAuthMethod()</code> does not accept — the feature is half-wired
 upstream. And <code>GEMINI_CLI_TRUST_WORKSPACE=true</code> for headless runs,
 which the trust gate otherwise blocks.</div>
+
+<h3>Running the verified work wave through Gemini CLI</h3>
+<pre><code>WAVE_AGENT=gemini GEMMA_GATEWAY=http://127.0.0.1:8899 \
+python3 scripts/pi_work_wave.py --workspace /path/to/project \
+  --no-baseline-gate --final-verify true</code></pre>
+<p>This keeps the same queue, verification gates, retry budget, commits and
+stream-JSON capture; only the session driver changes from Pi to Gemini CLI.</p>
 
 <h3>Running the CLI's own router on a local model</h3>
 <p>Gemini CLI scores every request for complexity before doing any work, to decide
