@@ -303,6 +303,9 @@
   <section id="system">
     <p class="eyebrow">System</p>
     <h2>Local model, complete agent path</h2>
+    <div class="note"><strong><a href="https://github.com/Stoneforge-Labs/gemma-gateway">Gemma Gateway is open source.</a></strong>
+    The 1,300-line Rust bridge keeps upstream Gemini CLI intact and has 31
+    translation tests plus a live-model verifier.</div>
     <pre aria-label="System architecture"><code>Gemini CLI / gemma
         │
         ▼
@@ -319,7 +322,7 @@ Workspace  ───  CodeGraph index</code></pre>
       <dt>Agent driver</dt>
       <dd>A work-wave ledger gives each unit a verification command, retry budget, session capture, and commit requirement. Gemini CLI can replace the session driver without changing those gates.</dd>
       <dt>Gateway</dt>
-      <dd>A Rust bridge translates Gemini REST to OpenAI-compatible vLLM calls, including tools, schemas, streaming, reasoning, and token counts. It discovers the active model from <code>/models</code>.</dd>
+      <dd><a href="https://github.com/Stoneforge-Labs/gemma-gateway">Gemma Gateway</a> translates Gemini REST to OpenAI-compatible vLLM calls, including tools, schemas, streaming, reasoning, and token counts. It discovers the active model from <code>/models</code>.</dd>
       <dt>Tools</dt>
       <dd><code>rig-tools</code> exposes web retrieval, defect location, syntax checks, and unit status through MCP.</dd>
       <dt>CodeGraph</dt>
@@ -410,7 +413,7 @@ codegraph sync</code></pre>
 
 <footer>
   <p>Stoneforge Labs · open systems work, measured locally.</p>
-  <p><a href="https://github.com/Stoneforge-Labs">GitHub</a> · <a href="https://huggingface.co/StoneforgeLabs">Hugging Face</a> · <a href="LICENSE">MIT License</a></p>
+  <p><a href="https://github.com/Stoneforge-Labs/gemma-gateway">Gateway source</a> · <a href="https://github.com/Stoneforge-Labs">GitHub</a> · <a href="https://huggingface.co/StoneforgeLabs">Hugging Face</a> · <a href="LICENSE">MIT License</a></p>
 </footer>
 </body>
 </html>
