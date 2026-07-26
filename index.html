@@ -3,742 +3,414 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Measured Gemma 4 serving, evaluation, and agent-workflow results from a single RTX 5090 rig.">
-<title>Gemma Rig — Results and Runbook</title>
+<meta name="description" content="Verified Gemma 4 serving, evaluation, and agent-system results from a single RTX 5090.">
+<title>Gemma 4 on one RTX 5090 — Stoneforge Labs</title>
 <style>
- :root { color-scheme: light dark; --line:#8883; --dim:#8886; }
- body { font:15px/1.6 -apple-system,Segoe UI,system-ui,sans-serif; margin:0;
-        padding:32px 28px 80px; max-width:960px; }
- h1 { font-size:24px; margin:0 0 4px; }
- h2 { font-size:17px; margin:38px 0 12px; padding-bottom:6px;
-      border-bottom:1px solid var(--line); }
- h3 { font-size:14px; margin:22px 0 8px; letter-spacing:.02em; }
- .sub { opacity:.6; font-size:13px; margin-bottom:26px; }
- table { border-collapse:collapse; width:100%; margin:10px 0 16px; }
- th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line);
-         vertical-align:top; }
- th { font-size:12px; opacity:.7; font-weight:600; }
- code,pre { font-family:ui-monospace,Menlo,Consolas,monospace; }
- code { font-size:13px; background:#8881; padding:1px 5px; border-radius:3px; }
- pre { background:#8881; padding:12px 14px; border-radius:6px; overflow-x:auto;
-       font-size:13px; line-height:1.5; }
- pre code { background:none; padding:0; }
- .win { color:#16a34a; font-weight:600; }
- .no { color:#dc2626; font-weight:600; }
- .note { border-left:3px solid var(--line); padding:2px 0 2px 14px; margin:14px 0;
-         opacity:.85; font-size:14px; }
- a { color:inherit; }
- .cards { display:flex; gap:12px; flex-wrap:wrap; margin:16px 0 8px; }
- .card { border:1px solid var(--line); border-radius:8px; padding:12px 16px; min-width:150px; }
- .card b { display:block; font-size:21px; }
- .card span { font-size:11px; opacity:.65; }
- ul { padding-left:20px; } li { margin:5px 0; }
+  :root {
+    color-scheme: light;
+    --bg: #f7f8fa;
+    --surface: #fff;
+    --text: #18202a;
+    --muted: #5f6b78;
+    --line: #dce1e7;
+    --accent: #2457d6;
+    --good: #137a50;
+    --bad: #a33838;
+    --code: #f0f2f5;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  a { color: var(--accent); text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  a:focus-visible { outline: 3px solid #9bb5ff; outline-offset: 3px; }
+  .skip {
+    position: absolute;
+    left: -9999px;
+    top: 12px;
+  }
+  .skip:focus {
+    left: 12px;
+    z-index: 10;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  header, main, footer {
+    width: min(1040px, calc(100% - 40px));
+    margin-inline: auto;
+  }
+  header { padding: 64px 0 36px; }
+  .brand {
+    margin: 0 0 28px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .brand a { color: inherit; text-decoration: none; }
+  h1 {
+    max-width: 780px;
+    margin: 0;
+    font-size: clamp(38px, 7vw, 68px);
+    line-height: 1.02;
+    letter-spacing: -.045em;
+  }
+  .lead {
+    max-width: 720px;
+    margin: 24px 0 0;
+    color: var(--muted);
+    font-size: 20px;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    margin-top: 32px;
+    font-size: 14px;
+  }
+  nav a { color: var(--text); font-weight: 650; text-decoration: none; }
+  section {
+    padding: 48px 0;
+    border-top: 1px solid var(--line);
+  }
+  h2 {
+    margin: 0 0 12px;
+    font-size: clamp(26px, 4vw, 34px);
+    letter-spacing: -.025em;
+  }
+  h3 { margin: 28px 0 8px; font-size: 19px; }
+  p { max-width: 760px; margin: 8px 0 16px; }
+  .eyebrow {
+    margin: 0 0 8px;
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 750;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+  .section-intro { color: var(--muted); }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 28px 0 32px;
+  }
+  .metric {
+    min-height: 132px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .metric strong {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 30px;
+    line-height: 1;
+    letter-spacing: -.035em;
+  }
+  .metric span { color: var(--muted); font-size: 14px; }
+  .table-wrap {
+    overflow-x: auto;
+    margin: 20px 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th, td {
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 750;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+  tr:last-child td { border-bottom: 0; }
+  code {
+    padding: .1em .32em;
+    background: var(--code);
+    border-radius: 4px;
+    font: .9em/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  pre {
+    overflow-x: auto;
+    margin: 18px 0;
+    padding: 18px;
+    background: #161b22;
+    color: #e6edf3;
+    border-radius: var(--radius);
+    font: 13px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  pre code { padding: 0; background: transparent; color: inherit; }
+  .note {
+    max-width: 820px;
+    margin: 20px 0;
+    padding: 16px 18px;
+    background: var(--surface);
+    border-left: 3px solid var(--accent);
+    color: var(--muted);
+  }
+  .good { color: var(--good); font-weight: 700; }
+  .bad { color: var(--bad); font-weight: 700; }
+  .stack {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    margin: 24px 0;
+    border-top: 1px solid var(--line);
+  }
+  .stack dt, .stack dd {
+    margin: 0;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .stack dt { font-weight: 700; }
+  .stack dd { color: var(--muted); }
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    padding: 0;
+    list-style: none;
+  }
+  footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 36px 0 56px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+  }
+  footer p { margin: 0; }
+  @media (max-width: 760px) {
+    header { padding-top: 42px; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .stack { grid-template-columns: 1fr; }
+    .stack dt { padding-bottom: 2px; border-bottom: 0; }
+    .stack dd { padding-top: 2px; }
+    footer { display: block; }
+    footer p + p { margin-top: 8px; }
+  }
+  @media (max-width: 600px) {
+    header, main, footer { width: min(100% - 24px, 1040px); }
+    h1 { font-size: 38px; }
+    nav { gap: 8px 16px; }
+    .metrics { grid-template-columns: 1fr; }
+    .metric { min-height: auto; }
+  }
 </style>
 </head>
 <body>
-<main>
+<a class="skip" href="#content">Skip to content</a>
 
-<h1>Gemma rig — results and runbook</h1>
-<div class="sub">RTX 5090 · gemma-4 26B-A4B (MoE) and 31B (dense) · every number below was measured on this machine, and every failure is recorded alongside what worked</div>
-<div class="note">Published by <a href="https://github.com/Stoneforge-Labs">Stoneforge Labs</a>
-as a working report. Cells marked “running” were still in progress at this snapshot.</div>
+<header>
+  <p class="brand"><a href="https://github.com/Stoneforge-Labs">Stoneforge Labs</a> / Systems report</p>
+  <h1>Gemma 4 on one RTX 5090</h1>
+  <p class="lead">Measured serving, evaluation, and agent-system results. Only configurations reproduced on this machine are presented as findings.</p>
+  <nav aria-label="Report sections">
+    <a href="#results">Results</a>
+    <a href="#profiles">Profiles</a>
+    <a href="#system">System</a>
+    <a href="#reproduce">Reproduce</a>
+    <a href="#findings">Findings</a>
+  </nav>
+</header>
 
-<div class="cards">
-  <div class="card"><b>33/33</b><span>bug units fixed by Gemma</span></div>
-  <div class="card"><b>82.9%</b><span>MMLU-Pro (published 82.6) ✓</span></div>
-  <div class="card"><b>83.7%</b><span>MMLU-Pro, 31B ✓</span></div>
-  <div class="card"><b>189</b><span>tok/s, fast profile</span></div>
-  <div class="card"><b>24</b><span>harness bugs found and fixed</span></div>
-</div>
+<main id="content">
+  <section id="results">
+    <p class="eyebrow">Verified results</p>
+    <h2>The useful numbers</h2>
+    <p class="section-intro">RTX 5090 · WSL2 · vLLM 0.25.1 · batch-one decode unless noted</p>
 
-<h2>Daily use</h2>
-<pre><code>gemma --boot            # start her (cold start, ~2 min first time)
-gemma                   # interactive session
-gemma "fix the leak in vault_repo.py"        # one-shot
-gemma @shot.png "what is wrong here?"        # attach an image — she has vision
-gemma --status          # is she up, and what is serving
-gemma --stop            # unload, free the GPU
-gemma --logs            # every conversation and rig log</code></pre>
+    <div class="metrics">
+      <div class="metric"><strong>82.86%</strong><span>MMLU-Pro, 26B FP8<br>82.6% published</span></div>
+      <div class="metric"><strong>180</strong><span>tokens/s, 26B FP8<br>64 experts offloaded</span></div>
+      <div class="metric"><strong>189</strong><span>tokens/s, 26B NVFP4<br>64k context</span></div>
+      <div class="metric"><strong>99.6%</strong><span>prefix-cache hit rate<br>repeated agent prompts</span></div>
+    </div>
 
-<div class="note">Windows paths work directly: <code>gemma @C:\Users\you\Pictures\shot.png "what is this?"</code>
-— they are translated to WSL paths automatically.</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Measurement</th><th>Result</th><th>Method</th></tr></thead>
+        <tbody>
+          <tr><td>26B MoE FP8 + expert offload</td><td><strong>180 tok/s</strong> @ 32k</td><td><code>bench_serve.py</code>, quiet card</td></tr>
+          <tr><td>26B MoE NVFP4</td><td><strong>189 tok/s</strong> @ 64k</td><td>Same serving benchmark</td></tr>
+          <tr><td>31B dense NVFP4</td><td><strong>63 tok/s</strong> @ 32k</td><td>Same serving benchmark</td></tr>
+          <tr><td>MMLU-Pro, 26B FP8</td><td class="good">82.86%</td><td>lm-eval, 5-shot, chat template</td></tr>
+          <tr><td>MMLU-Pro, 26B NVFP4</td><td>79.71%</td><td>Identical protocol</td></tr>
+          <tr><td>NVFP4 accuracy cost</td><td>−3.15 points</td><td>Difference between the two rows above</td></tr>
+          <tr><td>Expert offload</td><td>97 → 180 tok/s</td><td>Freed VRAM enabled full CUDA-graph capture</td></tr>
+          <tr><td>NVFP4 execution path</td><td><code>FlashInferCutlassNvFp4LinearKernel</code></td><td>vLLM startup log</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-<h3>After a reboot</h3>
-<p>The model server does not survive a restart. Run <code>gemma --boot</code>, wait for
-<code>ready</code>, then use her normally. Nothing else needs restarting.</p>
+  <section id="profiles">
+    <p class="eyebrow">Model profiles</p>
+    <h2>Three operating points</h2>
+    <p class="section-intro">FP8 KV cache is the verified default for every profile.</p>
 
-<h2>Profiles — and how to pick context</h2>
-<table>
-<tr><th>Profile</th><th>Weights</th><th>Speed</th><th>Context</th><th>KV tokens</th><th>MMLU-Pro</th></tr>
-<tr><td><code>fast</code></td><td>NVFP4 4-bit</td><td>189 tok/s</td><td>64k</td><td>717,029</td><td>79.7%</td></tr>
-<tr><td><code>quality</code> (default)</td><td>26B FP8 + expert offload</td><td>180 tok/s</td><td>32k</td><td>79,572</td><td><span class="win">82.9% ✓</span></td></tr>
-<tr><td><code>smart</code></td><td>31B dense NVFP4</td><td>63 tok/s</td><td>32k</td><td>115,742</td><td><span class="win">83.7% ✓</span></td></tr>
-</table>
-<h3>Exact checkpoints behind the labels</h3>
-<table>
-<tr><th>Use</th><th>Checkpoint</th></tr>
-<tr><td>sweep: E2B</td><td><a href="https://huggingface.co/unsloth/gemma-4-E2B-it-NVFP4"><code>unsloth/gemma-4-E2B-it-NVFP4</code></a></td></tr>
-<tr><td>sweep: E4B</td><td><a href="https://huggingface.co/unsloth/gemma-4-E4B-it-NVFP4"><code>unsloth/gemma-4-E4B-it-NVFP4</code></a></td></tr>
-<tr><td>sweep: 12B</td><td><a href="https://huggingface.co/unsloth/gemma-4-12b-it-NVFP4"><code>unsloth/gemma-4-12b-it-NVFP4</code></a></td></tr>
-<tr><td><code>fast</code></td><td><a href="https://huggingface.co/unsloth/gemma-4-26B-A4B-it-NVFP4"><code>unsloth/gemma-4-26B-A4B-it-NVFP4</code></a></td></tr>
-<tr><td><code>quality</code></td><td><a href="https://huggingface.co/RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic"><code>RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic</code></a></td></tr>
-<tr><td><code>smart</code></td><td><a href="https://huggingface.co/RedHatAI/gemma-4-31B-it-NVFP4"><code>RedHatAI/gemma-4-31B-it-NVFP4</code></a></td></tr>
-</table>
-<div class="note">The result tables below are historical measurements made with
-<code>BENCH=1</code> and FP8 KV cache. The daily launcher now defaults to
-<code>turboquant_4bit_nc</code> (and 14 GiB CPU offload for <code>quality</code>);
-those defaults are not substituted into old benchmark rows.</div>
-<p>The 31B is dense — all 60 layers are read for every token, where the MoE reads
-only its 8 active experts. That is the entire 3x speed difference. It also uses
-<em>less</em> VRAM than the FP8 26B (19.8 vs 27 GiB) and gives the largest KV
-cache of the three. Its published advantages are biggest exactly where this rig
-works: BBEH +9.6, Tau2 (agentic tool use) +8.7, Codeforces +432 ELO.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Profile</th><th>Checkpoint</th><th>Decode</th><th>Context</th><th>Use</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>fast</code></td>
+            <td><a href="https://huggingface.co/unsloth/gemma-4-26B-A4B-it-NVFP4">26B-A4B NVFP4</a></td>
+            <td>189 tok/s</td><td>64k</td><td>Agent and coding work</td>
+          </tr>
+          <tr>
+            <td><code>quality</code></td>
+            <td><a href="https://huggingface.co/RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic">26B-A4B FP8 dynamic</a></td>
+            <td>180 tok/s</td><td>32k</td><td>Default; evaluation and general work</td>
+          </tr>
+          <tr>
+            <td><code>smart</code></td>
+            <td><a href="https://huggingface.co/RedHatAI/gemma-4-31B-it-NVFP4">31B dense NVFP4</a></td>
+            <td>63 tok/s</td><td>32k</td><td>Harder reasoning; slower decode</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-<pre><code>gemma --boot                          # DEFAULT: 26B FP8 — accurate, 180 tok/s
-GEMMA_PROFILE=fast  gemma --boot      # 26B NVFP4 — 189 tok/s, 64k context
-GEMMA_PROFILE=smart gemma --boot      # 31B dense — most accurate, 3x slower
-GEMMA_CTX=16384 gemma --boot          # any context, any profile
-GEMMA_IMAGES=8  gemma --boot          # more images per prompt</code></pre>
+    <h3>Additional checkpoints tested</h3>
+    <ul class="links">
+      <li><a href="https://huggingface.co/unsloth/gemma-4-E2B-it-NVFP4">Gemma 4 E2B NVFP4</a></li>
+      <li><a href="https://huggingface.co/unsloth/gemma-4-E4B-it-NVFP4">Gemma 4 E4B NVFP4</a></li>
+      <li><a href="https://huggingface.co/unsloth/gemma-4-12b-it-NVFP4">Gemma 4 12B NVFP4</a></li>
+    </ul>
+  </section>
 
-<h3>Vision, audio and files</h3>
-<p><b>Vision is on by default in every profile</b> and verified on both the 26B
-and the 31B — <code>gemma @photo.jpg "what is this?"</code> works on each.
-<code>GEMMA_IMAGES</code> sets how many images one prompt may carry (default 4).</p>
-<ul>
-<li><b>Audio is not available</b> on either model. Both the 26B and the 31B
-declare <code>audio_config: null</code> — there is no audio encoder in the
-weights. Only the 12B has one, and using it means giving up this speed and
-accuracy.</li>
-<li><b>Do not set the image limit to 0 on the 31B.</b> vLLM still profiles the
-encoder and dies on <code>AttributeError: 'NoneType' object has no attribute
-'size'</code>. The launcher clamps it to 1 for you. Turning it down saves
-nothing anyway — measured: KV cache is identical at image 1 and image 4
-(115,742 tokens either way).</li>
-<li><b>Files</b> are read with the ordinary tools — <code>@file</code> attaches
-anything, and she can open, edit and write files directly in the working
-directory.</li>
-</ul>
+  <section id="system">
+    <p class="eyebrow">System</p>
+    <h2>Local model, complete agent path</h2>
+    <pre aria-label="System architecture"><code>Gemini CLI / gemma
+        │
+        ▼
+gemma-gateway :8899  ───  rig-tools MCP
+        │
+        ▼
+vLLM :8891  ───  Gemma 4 checkpoint
 
-<p><b>Yes — context is selectable per boot.</b> <code>GEMMA_CTX</code> overrides the
-profile default. Bigger context costs KV memory, so if a boot fails on memory,
-lower it or switch profile.</p>
+Workspace  ───  CodeGraph index</code></pre>
 
-<div class="note">4-bit costs about 3 points of accuracy and buys speed. Use
-<code>fast</code> for agent work where she is writing code all night; use
-<code>quality</code> when the number matters.</div>
+    <dl class="stack">
+      <dt>Launcher</dt>
+      <dd><code>gemma</code> selects profiles, starts vLLM, attaches files or images, reports status, and keeps local logs.</dd>
+      <dt>Agent driver</dt>
+      <dd>A work-wave ledger gives each unit a verification command, retry budget, session capture, and commit requirement. Gemini CLI can replace the session driver without changing those gates.</dd>
+      <dt>Gateway</dt>
+      <dd>A Rust bridge translates Gemini REST to OpenAI-compatible vLLM calls, including tools, schemas, streaming, reasoning, and token counts. It discovers the active model from <code>/models</code>.</dd>
+      <dt>Tools</dt>
+      <dd><code>rig-tools</code> exposes web retrieval, defect location, syntax checks, and unit status through MCP.</dd>
+      <dt>CodeGraph</dt>
+      <dd>A workspace-side index returns relevant source, call paths, and change blast radius before edits. It is tooling, not part of the model weights.</dd>
+    </dl>
+  </section>
 
+  <section id="reproduce">
+    <p class="eyebrow">Reproduction</p>
+    <h2>Current run configuration</h2>
 
-<h3>Blocking the encoders: tested, and not worth it</h3>
-<p>The obvious tuning idea — <code>--limit-mm-per-prompt '{"image":0,"audio":0,"video":0}'</code>
-to reclaim VRAM for text — does not pay off on the 31B, and the two vLLM
-versions behave in <em>opposite</em> ways:</p>
-<table>
-<tr><th>vLLM</th><th>vision on (image:4)</th><th>modalities blocked (image:0)</th></tr>
-<tr><td>0.25.1 <em>(rig default)</em></td><td class="win">works — 62.8 tok/s, 115,742 KV</td><td class="no">crashes</td></tr>
-<tr><td>0.26.0</td><td class="no">crashes</td><td class="win">works — 58.5 tok/s, 73,635 KV</td></tr>
-</table>
-<p>Both crashes are the same bug inside vLLM's <code>gemma4_mm.py</code> forward
-path (<code>AttributeError: 'NoneType' object has no attribute 'size'</code>),
-just triggered from opposite directions. Blocking the modalities saves about
-1.1 GiB of weights but yields a <em>smaller</em> KV cache and slightly slower
-decode, so there is nothing to win. Vision stays on.</p>
-<h2>Putting her to work on bugs</h2>
-<p>She fixes code through a wave: a queue of bounded units, each with a command
-that proves it is fixed. The driver — not the model — decides when a unit is done.</p>
+    <h3>Serve a profile</h3>
+    <pre><code>gemma --boot
+GEMMA_PROFILE=fast gemma --boot
+GEMMA_PROFILE=smart gemma --boot
+GEMMA_CTX=16384 gemma --boot</code></pre>
 
-<pre><code># 1. write the queue: one line per unit, in the workspace root
-#    WAVE.md
-- [ ] fix-leak-a: In db.py, close the connection on every path | verify: python3 .../check_fix.py db.py --absent 'conn = connect\(\)'
+    <h3>Connect Gemini CLI</h3>
+    <pre><code>gemma-gateway --listen 127.0.0.1:8899 \
+  --upstream http://127.0.0.1:8891/v1
 
-# 2. run the wave
-cd /path/to/Harness
+GEMINI_API_KEY=local \
+GEMINI_CLI_TRUST_WORKSPACE=true \
+GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:8899 \
+gemini</code></pre>
+
+    <h3>Run a gated work wave</h3>
+    <pre><code>WAVE_AGENT=gemini \
+GEMMA_GATEWAY=http://127.0.0.1:8899 \
 python3 scripts/pi_work_wave.py \
   --workspace /path/to/project \
-  --model gemma-4-26b-a4b --no-baseline-gate --final-verify true</code></pre>
+  --no-baseline-gate \
+  --final-verify true</code></pre>
 
-<p>A unit only counts when its verify command exits 0 <em>and</em> a commit
-landed. She gets 20 turns and 12 attempts per unit — enough to self-correct.</p>
-
-<h3>Writing a gate that actually works</h3>
-<ul>
-<li>Gate on the <b>defect's own signature</b>, never on a word the file already
-contains — a gate that is green before any work exists cannot tell a correct
-model from an idle one. The driver now warns about this at startup.</li>
-<li>Check the pattern matches the real code first:
-<code>python3 scripts/check_fix.py &lt;file&gt; --absent '&lt;regex&gt;'</code>. A typo
-(<code>con =</code> vs <code>c =</code>) silently makes the unit unsatisfiable.</li>
-<li>Split a big file across units with <code>--max-count 12</code>, stepping the
-ceiling down (12 → 8 → 4 → 0). 17 fixes in one session fails; four passes succeed.</li>
-</ul>
-
-<h2>Her tools</h2>
-<p>She has these in every session, and her prompt tells her when to reach for each.
-Gemini CLI receives the same core tools through the <code>rig-tools</code> MCP
-server registered by <code>gemini-extension.json</code>.</p>
-<pre><code>web.py search "how does X work"      find pages
-web.py read &lt;url&gt;                    read one as text
-web.py images "a red fox"            find images
-web.py get &lt;url&gt; -o pic.jpg          download — then she can SEE it
-web.py save &lt;url&gt; --dir refs/        keep a page readable offline
-
-find_defect.py &lt;file&gt; '&lt;regex&gt;'      where the defect is now
-close_leak.py &lt;file&gt; &lt;line&gt;          exact before/after for one leak
-check_syntax.py &lt;file&gt;               sub-second compile check
-unit_status.py                       run the real gate, say what is missing</code></pre>
-
-<p>She can also install what she needs (<code>pip</code>, <code>apt-get</code>,
-<code>npm</code>) and write new tools into
-<code>scripts/skills/</code> — add a line to <code>SKILL.md</code> and it is
-available from then on.</p>
-
-<h3>CodeGraph for indexed repositories</h3>
-<p>CodeGraph is a workspace-side CLI, not part of the model weights. It returns
-the relevant symbol source, call paths and change blast radius before the agent
-starts editing. The current Harness index contains 96 files, 962 nodes and
-2,005 relationships.</p>
-<pre><code>codegraph init
+    <h3>Inspect an indexed codebase</h3>
+    <pre><code>codegraph init
 codegraph explore "how does a Gemini request reach vLLM?"
 codegraph sync</code></pre>
-<div class="note"><code>.codegraph/</code> is derived SQLite data and stays out
-of Git. On WSL repositories under <code>/mnt</code>, refresh it with
-<code>codegraph sync</code> or the Git hook rather than relying on file watching.</div>
 
-<div class="note"><b>Offline:</b> the model, her tools and 247 session transcripts
-are all local. <code>web.py save</code> the docs she depends on and she keeps
-working with no connection.</div>
+    <div class="note">The measured report is public first. Reusable harness source is being separated from unrelated private code before release.</div>
+  </section>
 
-<h2>Tuning — how the profiles were found</h2>
+  <section id="findings">
+    <p class="eyebrow">Engineering findings</p>
+    <h2>What changed after measurement</h2>
 
-<h3>Profile the router, then offload the cold experts</h3>
-<p>The model holds 128 experts per layer and routes each token to 8. On a narrow
-workload that choice is far from uniform.</p>
-<pre><code>python3 scripts/profile_experts.py --prompts work.txt \
-    --out experts.json --print-offload</code></pre>
-<table>
-<tr><th>Measured on this rig's SQL/Python workload</th><th></th></tr>
-<tr><td>hot/cold ratio</td><td><b>5.6×</b> — e47: 19,768 selections vs e49: 3,500</td></tr>
-<tr><td>coldest 32 experts</td><td>14.7% of activations (uniform would be 25%)</td></tr>
-<tr><td>never selected</td><td><b>0</b> — the tail is cold, not dead</td></tr>
-</table>
-<p>Offloading the coldest 64 to host memory made the FP8 build
-<span class="win">faster</span>, not slower — <b>97 → 180 tok/s</b> at double the
-context — because the freed VRAM lets CUDA graphs capture fully. Accuracy was
-unchanged within noise.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Finding</th><th>Evidence</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Expert routing is workload-specific</td>
+            <td>The hottest expert received 5.6× the selections of the coldest; no expert was unused.</td>
+            <td>Offload the coldest 64, not arbitrary layers.</td>
+          </tr>
+          <tr>
+            <td>Offload can improve speed</td>
+            <td>FP8 decode rose from 97 to 180 tok/s while context doubled.</td>
+            <td>VRAM released for CUDA graphs outweighed transfer cost.</td>
+          </tr>
+          <tr>
+            <td>TurboQuant does not serve here</td>
+            <td>All four presets failed when multimodal Gemma 4 selected <code>TRITON_ATTN</code>: KV dtype unsupported.</td>
+            <td class="bad">Reverted every profile to FP8 KV.</td>
+          </tr>
+          <tr>
+            <td>The broad sweep was invalid</td>
+            <td>8k output truncation, a 7,200-second timeout, and concurrent boots corrupted different rows.</td>
+            <td>Removed the matrix; retained only independently reproduced results.</td>
+          </tr>
+          <tr>
+            <td>Reasoning changes TTFT accounting</td>
+            <td>First tokens arrive in <code>reasoning_content</code>, not <code>content</code>.</td>
+            <td>The speed harness now counts the first reasoning token.</td>
+          </tr>
+          <tr>
+            <td>Boot and sweep must be mutually exclusive</td>
+            <td>An interactive boot killed the model being measured and produced false serve failures.</td>
+            <td>The launcher now refuses to evict an active sweep.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-<h3>What each dial is worth</h3>
-<table>
-<tr><th>Change</th><th>Effect</th></tr>
-<tr><td><code>KV_DTYPE=fp8</code></td><td>KV cache 16,251 → 41,694 tokens. The only free context on a full card.</td></tr>
-<tr><td>expert offload</td><td>FP8: 97 → 180 tok/s, 16k → 32k context, no accuracy cost</td></tr>
-<tr><td>NVFP4 → FP8</td><td>+3.2 points accuracy (79.7% → 82.9%), 1.85× slower before offload</td></tr>
-<tr><td><code>GPU_UTIL</code></td><td>0.93 is the practical ceiling — the Windows display holds ~1.6 GiB</td></tr>
-<tr><td><code>BENCH=1</code></td><td>disables prefix caching, for measurements that do not depend on question order</td></tr>
-</table>
-
-<h3>Traps worth knowing</h3>
-<ul>
-<li><code>--cpu-offload-params</code> alone does <b>nothing</b>. It only marks
-params eligible; nothing moves without a <code>--cpu-offload-gb</code> budget.
-Same VRAM, same KV cache, no error.</li>
-<li><span class="no">MTP does not work</span> for this model. vLLM builds a
-2816+1024 concat where the assistant checkpoint wants 2×2816. Fails identically
-on vLLM 0.25.1 and 0.26.0, NVFP4 and FP8 — a vLLM-side gap, not our setup.</li>
-<li>Audio is impossible on the 26B: its config declares
-<code>audio_config: null</code>. Only the 12B has an audio encoder.</li>
-</ul>
-
-<h2>Benchmarking</h2>
-<p>Use lm-evaluation-harness — the same tool that produced the published numbers.
-Our own harness under-measured by several points.</p>
-<pre><code>GEMMA_PROFILE=quality BENCH=1 gemma --boot
-
-~/.venvs/lmeval/bin/lm_eval --model local-chat-completions \
-  --model_args "model=gemma-4-26b-a4b,base_url=http://127.0.0.1:8891/v1/chat/completions,\
-num_concurrent=6,tokenized_requests=False,timeout=1800" \
-  --tasks mmlu_pro --limit 25 --apply_chat_template --gen_kwargs max_tokens=8192</code></pre>
-<table>
-<tr><th>Benchmark</th><th>Ours (FP8)</th><th>Published</th><th></th></tr>
-<tr><td>MMLU-Pro</td><td>82.86%</td><td>82.6%</td><td class="win">PASS</td></tr>
-<tr><td>MMLU-Pro (NVFP4)</td><td>79.71%</td><td>82.6%</td><td class="no">−3.2 from 4-bit</td></tr>
-</table>
-<div class="note">The published card numbers are for full-precision weights.
-RedHat's own evals of the quantized checkpoint are lower on some benchmarks
-(GPQA 74.75%, AIME 80.0%) — worth knowing before chasing a number that the
-quantized model was never going to reach.</div>
-
-<h2>Reproducing any of it</h2>
-<div class="note">This first release publishes the measured report. The private
-harness is being separated from unrelated code before its scripts and profiles
-can be released safely.</div>
-<pre><code>cd /path/to/Harness
-python3 -m pytest tests -q                       # 95 tests
-
-# serving, with every dial exposed
-MODEL_REPO=models--RedHatAI--gemma-4-26B-A4B-it-FP8-dynamic \
-SERVED_NAME=gemma-4-26b-a4b QUANT=compressed-tensors \
-CTX=32768 GPU_UTIL=0.93 KV_DTYPE=fp8 REASONING=1 \
-OFFLOAD_EXPERTS="$(cold list)" CPU_OFFLOAD_GB=10 \
-    bash scripts/serve_vllm.sh
-
-python3 scripts/bench_serve.py --model gemma-4-26b-a4b --runs 3   # speed
-python3 scripts/profile_experts.py --prompts work.txt             # routing</code></pre>
-<p>The expert profile used by the quality profile is committed as
-<code>profiles-experts-sql-python.json</code>, so the exact offload set is
-reproducible rather than re-measured each time.</p>
-
-
-
-<h2>Every model, one protocol</h2>
-<p>All five put through the identical pipeline — NVFP4 weights, fp8 KV cache,
-reasoning channel on, prefix caching off, then scored with lm-evaluation-harness
-on 5-shot MMLU-Pro (350 rows). Run consecutively, never two models on the card
-at once, by <code>scripts/sweep_models.sh</code>.</p>
-<table>
-<tr><th>Model</th><th>Decode</th><th>Context</th><th>KV tokens</th><th>MMLU-Pro (ours)</th><th>Published</th><th>Quantization cost</th></tr>
-<tr><td>E2B</td><td><b>254 tok/s</b></td><td>64k</td><td>7,517,275</td><td>49.7% ±2.6</td><td>—</td><td>—</td></tr>
-<tr><td>E4B</td><td>180 tok/s</td><td>64k</td><td>2,470,041</td><td>63.1% ±2.4</td><td>—</td><td>—</td></tr>
-<tr><td>12B</td><td>99 tok/s</td><td>64k</td><td>1,185,866</td><td>71.7% ±2.3</td><td>77.2%</td><td>−5.5</td></tr>
-<tr><td>26B-A4B (MoE)</td><td>189 tok/s</td><td>64k</td><td>717,029</td><td>79.7% ±2.1</td><td>82.6%</td><td>−2.9</td></tr>
-<tr><td>26B-A4B FP8</td><td>180 tok/s</td><td>32k</td><td>79,572</td><td><span class="win">82.9% ✓</span></td><td>82.6%</td><td>0</td></tr>
-<tr><td>31B (dense)</td><td>63 tok/s</td><td>32k</td><td>115,742</td><td><span class="win">83.7% ✓</span></td><td>85.2%</td><td>−1.5</td></tr>
-</table>
-
-
-<h3>All five benchmarks, all five models</h3>
-<p>Every cell measured under one protocol, models run consecutively &mdash; never two on the card at once. Speeds here are with prefix caching <em>off</em> (the scoring config); with it on, as you actually run her, they are roughly 2.5x higher. Where the card publishes a mark it is shown after the slash; E2B and E4B are not in the card's table, so they are deliberately unscored against one.</p>
-<table>
-<tr><th>Model</th><th>Decode</th><th>MMLU-Pro</th><th>GPQA</th><th>MMMLU</th><th>BBEH</th><th>AIME</th></tr>
-<tr><td>E2B</td><td>90.2 tok/s</td><td>49.7%</td><td><span class="">44.0%</span></td><td><span class="">63.0%</span></td><td><span class="">9.0%</span></td><td><span class="">26.7%</span></td></tr>
-<tr><td>E4B</td><td>151.0 tok/s</td><td>64.0%</td><td><span class="">51.0%</span></td><td><span class="">65.0%</span></td><td><span class="">24.0%</span></td><td><span class="">36.7%</span></td></tr>
-<tr><td>12B</td><td>65.0 tok/s</td><td>71.1%</td><td><span class="no">no result</span></td><td><span class="no">77.0%</span> <small>/83.4</small></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td></tr>
-<tr><td>26B-A4B</td><td>&mdash; tok/s</td><td><span class="idle">running</span></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td></tr>
-<tr><td>31B dense</td><td>&mdash; tok/s</td><td><span class="idle">running</span></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td><td><span class="idle">running</span></td></tr>
-</table>
-<h3>What the sweep shows</h3>
-<ul>
-<li><b>The 26B MoE is the sweet spot and it is not close.</b> It beats the dense
-12B by 8 points <em>and</em> runs twice as fast, because it activates only 8 of
-128 experts per token while the 12B reads all of its weights every time. Model
-size and speed are not the same axis once a mixture-of-experts is on the table.</li>
-<li><b>E2B is the speed king at 254 tok/s</b> — 2.5× the 26B — and holds a 7.5M
-token KV cache. At 49.7% it is not a coding model, but for classification,
-routing, extraction or anything with a tight loop it is the obvious choice.</li>
-<li><b>E4B doubles E2B's cost for +13 points.</b> A reasonable middle for
-structured work that needs some judgement.</li>
-<li><b>4-bit costs more on smaller models.</b> The 12B loses 5.5 points to
-quantization where the 31B loses 1.5. Less redundancy to spare.</li>
-<li><b>Only the FP8 26B and the 31B reach a published mark.</b> Everything at
-4-bit sits below its card number, consistently — which is the same conclusion
-the quantization tests reached from the other direction.</li>
-</ul>
-<div class="note">Bug found while running this: the speed harness measured
-time-to-first-token by waiting on <code>delta.content</code>, but a reasoning
-model streams its first tokens into <code>delta.reasoning_content</code>. TTFT
-stayed <code>None</code> and the report crashed. On a model that thinks before
-answering, the first reasoning token <em>is</em> the first token.</div>
-<h2>Driving it from Gemini CLI</h2>
-<p>The whole of Google's Gemini CLI — hooks, MCP servers, subagents, checkpointing,
-plan mode, sandboxing, extensions — now runs against local Gemma, with
-<em>no changes to the CLI at all</em>. That last part is the point. The CLI stays
-byte-identical to upstream, so <code>npm update</code> keeps working forever and
-every feature Google ships arrives for free. Nothing here is a fork to maintain.</p>
-
-<p>It works because the CLI honours <code>GOOGLE_GEMINI_BASE_URL</code>. Point it at
-a small Rust process that speaks Gemini REST at the front and OpenAI at the back:</p>
-<pre><code>gemma --boot                                    # vLLM on :8891
-gemma-gateway --listen 127.0.0.1:8899 --upstream http://127.0.0.1:8891/v1
-GEMINI_API_KEY=local GEMINI_CLI_TRUST_WORKSPACE=true \
-GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:8899 gemini</code></pre>
-<p>With no <code>--model</code>, the gateway discovers the model from vLLM's
-<code>/models</code> endpoint and follows profile switches. Pin
-<code>--model</code> only when the gateway fronts a separately fixed server.</p>
-
-<div class="note">Two settings are needed once, in <code>~/.gemini/settings.json</code>:
-<code>security.auth.selectedType: "gemini-api-key"</code>, because the CLI has a
-<code>GATEWAY</code> auth type that <code>getAuthTypeFromEnv()</code> returns but
-<code>validateAuthMethod()</code> does not accept — the feature is half-wired
-upstream. And <code>GEMINI_CLI_TRUST_WORKSPACE=true</code> for headless runs,
-which the trust gate otherwise blocks.</div>
-
-<h3>Running the verified work wave through Gemini CLI</h3>
-<pre><code>WAVE_AGENT=gemini GEMMA_GATEWAY=http://127.0.0.1:8899 \
-python3 scripts/pi_work_wave.py --workspace /path/to/project \
-  --no-baseline-gate --final-verify true</code></pre>
-<p>This keeps the same queue, verification gates, retry budget, commits and
-stream-JSON capture; only the session driver changes from Pi to Gemini CLI.</p>
-
-<h3>Running the CLI's own router on a local model</h3>
-<p>Gemini CLI scores every request for complexity before doing any work, to decide
-which model should handle it. Left alone against a local backend, that scoring
-call goes to the <em>full-size</em> model — a wasted 26B call on every single turn.</p>
-
-<p>Google's answer is <code>gemini gemma setup</code>: install their LiteRT-LM
-binary and download a Gemma 3 1B to do the scoring. But reading
-<code>LocalLiteRtLmClient</code> in the CLI bundle shows its client is just the
-GenAI SDK pointed at a base URL — <code>v1beta generateContent</code>, JSON
-response format, temperature 0, 256 tokens. That is this gateway's wire format
-exactly, so no LiteRT install is needed and the classifier can run on a model
-that has actually been benchmarked here:</p>
-<pre><code>"experimental": { "gemmaModelRouter": {
-    "enabled": true,
-    "autoStartServer": false,
-    "classifier": { "host": "http://127.0.0.1:8899",
-                    "model": "gemma3-1b-gpu-custom" } } }</code></pre>
-<p>Three things there are load-bearing and each cost real time to find.
-<code>autoStartServer</code> defaults to <span class="no">true</span> and will hunt
-for a LiteRT binary that is not installed. The model name is checked against a
-hard-coded literal — <em>"Only gemma3-1b-gpu-custom has been tested"</em> — so it
-must be spelled that way regardless of what is served; harmless, because
-<code>--model</code> pins the real model and the requested name is discarded. And
-the reply is <code>JSON.parse</code>d under a 10-second timeout, so whatever sits
-behind the gateway must be fast and must honour <code>response_format</code>.</p>
-<p>Verified working: with it wired up the gateway logs two inbound requests per
-turn — one streaming (the turn itself) and one not (the classifier).</p>
-
-<h3>What the gateway had to translate, and what broke</h3>
-<p>The two formats disagree in more places than the documentation suggests. Every
-row below was a real failure, found by running the CLI rather than by reading:</p>
-<table>
-<tr><th>Symptom</th><th>Cause</th><th>Status</th></tr>
-<tr><td><code>Error executing tool generic_tool: Tool "generic_tool" not found</code>
-        — every tool call failed</td>
-    <td>OpenAI streams one tool call across several SSE deltas: the first carries
-        <code>id</code> and <code>name</code>, later ones append fragments of
-        <code>arguments</code> with no name. Gemini's <code>functionCall</code> is
-        atomic. Translating each chunk on its own emitted one nameless call per
-        fragment. vLLM was returning the call correctly the whole time.</td>
-    <td><span class="win">fixed</span> — accumulate by index, emit at
-        <code>finish_reason</code></td></tr>
-<tr><td>Model answers confidently about an attached image it never saw</td>
-    <td><code>inlineData</code> and <code>fileData</code> parts were not read at
-        all. Silent — no error, just a wrong answer.</td>
-    <td><span class="win">fixed</span> — data-URL content parts, mime type picks
-        image/audio/video</td></tr>
-<tr><td><code>Grammar error: Invalid type: OBJECT</code>, five retries, every turn</td>
-    <td>Gemini's schemas are OpenAPI, whose type names are upper-case; vLLM compiles
-        the schema into a decoding grammar and rejects that spelling. This is what
-        broke the model router. The trap: the CLI sends upper-case types under a key
-        named <code>responseJsonSchema</code>, so trusting the field name leaves it
-        broken.</td>
-    <td><span class="win">fixed</span> — convert on content, not on the label</td></tr>
-<tr><td>Loop detection and chat compression misbehaving</td>
-    <td><code>responseMimeType</code> and <code>toolConfig</code> were dropped, so
-        JSON mode and <code>tool_choice</code> never reached the server. "Must not
-        call a tool" silently became "may".</td>
-    <td><span class="win">fixed</span></td></tr>
-<tr><td>Finished turns report zero tokens used</td>
-    <td>A streamed response carries no usage unless asked, and the final chunk that
-        carries the counts has no <code>choices</code> — so it was being discarded.</td>
-    <td><span class="win">fixed</span> — <code>stream_options.include_usage</code></td></tr>
-<tr><td>Turn crashes <em>after</em> the answer already arrived</td>
-    <td><code>data: [DONE]</code> is an OpenAI convention. Google's SSE just ends.
-        Forwarding it makes the GenAI SDK <code>JSON.parse</code> the word
-        <code>[DONE]</code>.</td>
-    <td><span class="win">fixed</span> — swallow the sentinel</td></tr>
-</table>
-<div class="note">All of it is unit-tested without a server or a GPU — the
-translation layer is pure JSON in, JSON out, and 31 tests cover the shapes above
-including the two that were found only by capturing live traffic off the wire.</div>
-
-<h2>Lessons learned — including everything that did not work</h2>
-<p>Most of what follows are things that <em>looked</em> like the model failing and
-were not. That is the single biggest lesson from this build: on a local rig, a
-capable model spends most of its apparent failures being strangled by the
-harness around it. Each row below was diagnosed by measurement, not by guessing.</p>
-
-<h3>1. Nine times the "bad model" was a broken measurement</h3>
-<table>
-<tr><th>What it looked like</th><th>What it actually was</th><th>Effect once fixed</th></tr>
-<tr><td>Model scores 0% on every benchmark</td>
-    <td>Gemma's chat template sets <code>enable_thinking|default(false)</code>. Turning thinking on <em>without</em> <code>--reasoning-parser gemma4</code> is worse than leaving it off: 900+ tokens are generated and <code>content</code> comes back <code>None</code>.</td>
-    <td>0% → real scores</td></tr>
-<tr><td>Model is bad at BBEH</td>
-    <td>The split is ordered by task. Taking the first 100 rows measured <em>one</em> subtask (boardgame QA) out of 23, against a mark that averages all of them.</td>
-    <td>exposed two fake "passes"</td></tr>
-<tr><td>Model cannot do competition maths</td>
-    <td>Token budget too small — every miss was a chain of thought cut off mid-derivation.</td>
-    <td>AIME 36.7% → 73.3%</td></tr>
-<tr><td>Model ignores the answer format</td>
-    <td>The dataset rows already carried their own <code>\boxed{LETTER}</code> instruction and I appended a second, different one. It obeyed neither.</td>
-    <td>GPQA 50% → 90%</td></tr>
-<tr><td>Model gets LaTeX answers wrong</td>
-    <td>The extractor's regex stopped at the first <code>}</code>, so <code>\boxed{\dfrac{14}{3}}</code> became <code>\dfrac{14</code>. Correct answers graded wrong.</td>
-    <td>whole benchmark class recovered</td></tr>
-<tr><td>Few-shot prompting makes it worse</td>
-    <td>Two bugs at once: <code>"The answer is (D)."</code> — the exact format MMLU-Pro's own exemplars teach — was not matched by the extractor, and the row cache ignored the split, so the "5-shot" pool was silently fed test rows with empty reasoning chains.</td>
-    <td>few-shot finally worked</td></tr>
-<tr><td>Model is weak on BBEH scoring</td>
-    <td>Grading compared only the <em>last</em> number: <code>999, 2</code> scored <b>right</b> against a gold of <code>150, 2</code>, while a correct <code>C</code> scored wrong against <code>(C)</code>.</td>
-    <td>both directions fixed</td></tr>
-<tr><td>Scores drift run to run</td>
-    <td>No seed, and call errors (a 502, a timeout) were counted in the denominator as wrong answers.</td>
-    <td>reproducible numbers</td></tr>
-<tr><td>Model refuses to fix a file</td>
-    <td>My unit said <code>con = es.connect()</code>; the code says <code>c = es.connect()</code>. Zero matches — so the gate passed trivially, she correctly found nothing to change, and could not commit. Three sessions lost to a typo in my pattern.</td>
-    <td>17 real leaks then fixed</td></tr>
-</table>
-
-<h3>2. Limits I invented, every one of which failed silently</h3>
-<p>Not one of these errored. They each produced a wrong result that looked like normal operation.</p>
-<table>
-<tr><th>Limit</th><th>What it silently did</th><th>Fix</th></tr>
-<tr><td>30-unit queue cap</td><td>A 33-unit queue returned <em>nothing</em>. No unit was ever dispatched; the log just said the wave was running.</td><td>cap 200, and it says why if it refuses</td></tr>
-<tr><td>6 turns per attempt</td><td>Cut her off mid-fix, then logged <code>no_commit</code> as her failure. <b>2 of 27 successful units needed more than 6 turns</b> — those would have been recorded as her failing.</td><td>20 turns</td></tr>
-<tr><td>4 no-progress attempts</td><td>Blocked a unit whose gate named the wrong variable — punishing the model for my bug.</td><td>12 attempts</td></tr>
-<tr><td>50-file scope ceiling</td><td>A tripwire for wandering off, read as a budget.</td><td>200</td></tr>
-<tr><td><code>git restore .</code> in the reset</td><td>Reverted the operator's freshly written <code>WAVE.md</code> to the committed one, so a whole wave ran a <em>superseded</em> queue while reporting normally.</td><td>driver files excluded by pathspec</td></tr>
-</table>
-
-<h3>3. Gates that cannot fail are worse than no gate</h3>
-<ul>
-<li><b>A gate green before any work exists cannot judge anything.</b> Four units shipped with a <code>--present</code> pattern matching a word the file already contained. A correct model and an idle one look identical; the only remaining requirement is that <em>something</em> gets committed. The driver now runs every gate at startup and warns.</li>
-<li><b>She once "fixed" a file by deleting it.</b> 45 lines of query logic replaced with <code>// ... existing query processing ...</code>. The defect pattern was gone, the fix signature present, the file compiled, a commit existed — every check passed. Found by reading the diff, not by any automated check. There is now an elision guard, and her prompt says outright that a placeholder comment <em>deletes</em> code.</li>
-<li><b>The gate is still weaker than it looks.</b> A unit verified by a test suite can be passed by deleting the failing assert. Same class of hole, one layer out.</li>
-</ul>
-
-<div class="note">Found while writing this page, which is the point of
-writing it: 12B's GPQA run consumed two hours and produced no score. The sweep
-piped the benchmark straight into <code>grep</code> for the summary line, so a
-run that timed out and a run that scored zero both landed in the TSV as
-<code>-</code>, with every diagnostic discarded — and the page then rendered that
-as <code>-%</code>, which reads as a formatting glitch rather than a failure. The
-sweep now keeps each benchmark's full output in its own log, distinguishes
-TIMEOUT from ERROR by the exit status, and prints the tail loudly; the page shows
-the failure in red. Same lesson as above, one level up: it is not enough for a
-gate to be able to fail, the failure has to be <em>visible</em>.</div>
-
-<h3>4. Small samples lie</h3>
-<p>MMLU-Pro measured <b>87.5%</b> at n=8 and <b>79.7%</b> at n=350 on the same model
-and protocol. The first number would have been reported as a comfortable pass.
-Two earlier "passes" (MMLU-Pro 84%, MMMLU 87%) turned out to be artefacts of
-sampling the easy front of a category-ordered split — both evaporated under
-representative sampling.</p>
-<div class="note">Corollary: use the standard harness. <b>lm-evaluation-harness</b> is
-what produced the published numbers, and our own harness under-measured relative
-to it. Reimplementing an eval is reimplementing its bugs.</div>
-
-<h3>5. Published numbers are for full-precision weights</h3>
-<p>The card's marks were not measured on a quantized checkpoint. RedHat publishes
-its own evals of the quantized 26B, and ours matched them almost exactly — while
-both sit below Google's card:</p>
-<table>
-<tr><th>Benchmark</th><th>Our measurement</th><th>RedHat (quantized)</th><th>Google card (full precision)</th></tr>
-<tr><td>AIME 2025</td><td>80.0%</td><td>80.0%</td><td>88.3%</td></tr>
-<tr><td>GPQA Diamond</td><td>73.0%</td><td>74.75%</td><td>82.3%</td></tr>
-</table>
-<p>So chasing some card numbers on a 4-bit model is chasing something that was
-never achievable. Knowing that early would have saved hours.</p>
-
-<h3>6. Serving: what worked, what did not</h3>
-<table>
-<tr><th>Attempt</th><th>Result</th></tr>
-<tr><td><code>KV_DTYPE=fp8</code></td><td class="win">Worked. KV 16,251 → 41,694 tokens. The only free context on a card full of weights.</td></tr>
-<tr><td>Offload cold experts</td><td class="win">Worked, and backwards: FP8 got <b>faster</b>, 97 → 180 tok/s at double the context, because freed VRAM let CUDA graphs capture fully.</td></tr>
-<tr><td>NVFP4 → FP8</td><td class="win">Worked. +3.2 points MMLU-Pro (79.7 → 82.9). 4-bit quantization was the entire gap to the published mark.</td></tr>
-<tr><td>31B dense</td><td class="win">Worked, and fits: best accuracy (83.7%) using <em>less</em> VRAM than FP8 26B. Costs 3x speed — it is dense, so every layer is read per token.</td></tr>
-<tr><td><b>MTP</b> (multi-token prediction)</td><td class="no">Failed. vLLM builds a 2816+1024 concat where the assistant checkpoint wants 2×2816. Identical failure on 0.25.1 <em>and</em> 0.26.0, NVFP4 <em>and</em> FP8, and both assistant repos are byte-identical. A vLLM-side gap for Gemma-4, not a config or version issue.</td></tr>
-<tr><td><b>Blocking the encoders</b></td><td class="no">Failed to help. Saves ~1.1 GiB of weights but yields a <em>smaller</em> KV cache and slower decode. And the two vLLM versions invert: 0.25.1 crashes with modalities off, 0.26.0 crashes with vision on.</td></tr>
-<tr><td><b>Audio</b></td><td class="no">Impossible. Both the 26B and 31B declare <code>audio_config: null</code> — no encoder in the weights. Only the 12B has one.</td></tr>
-<tr><td><code>--cpu-offload-params</code> alone</td><td class="no">Silently inert. It only marks params <em>eligible</em>; nothing moves without a <code>--cpu-offload-gb</code> budget. Identical VRAM, identical KV cache, no error, no warning.</td></tr>
-</table>
-
-<h3>7. The router profile — a real skew, but no dead weight</h3>
-<p>The prediction was a power-law with experts specialised away from this workload,
-sitting idle. Measured over this rig's own SQL/Python prompts across all 30 layers:</p>
-<table>
-<tr><td>hot/cold ratio</td><td><b>5.6×</b> — e47: 19,768 selections vs e49: 3,500</td></tr>
-<tr><td>coldest 32 of 128</td><td>14.7% of activations (uniform would be 25%)</td></tr>
-<tr><td>never selected</td><td><b>0 experts</b> — the tail is cold, not dead</td></tr>
-</table>
-<p>So the skew is real and offloading pays, but nothing can be discarded outright.
-Also: the hook had to target <code>layers.N.router.proj</code> — Gemma-4 does not
-use the <code>gate</code> name other vLLM MoE models do, so the obvious filter
-found nothing at all.</p>
-
-<h3>8. Infrastructure that bit hard</h3>
-<ul>
-<li><b>An unbounded compile took the whole machine down.</b> The FP4 JIT runs one
-ninja job per core — 32 here, each peaking around 4.9 GB. That is ~157 GB against
-61 GB of RAM. WSL died mid-load and wiped <code>/tmp</code>, taking the logs with
-it. <code>MAX_JOBS=3</code> now bounds it; the artefacts cache, so it is paid once.</li>
-<li><b>Logs lived in <code>/tmp</code>.</b> The above erased them exactly when they
-were needed. Everything durable now lives in <code>~/gemma-logs</code>, one file
-per boot.</li>
-<li><b>A remote hook leaked 549 processes.</b> The ssh shim's <code>timeout</code>
-killed the <em>local</em> client; the remote process has no TTY, never sees SIGHUP,
-and survives. 33 GB of dead RSS, swap exhausted, load average 241 on the LAN box.
-The deadline now runs remote-side.</li>
-<li><b>Linking, three times.</b> The pip CUDA wheels ship only versioned sonames
-(<code>libcudart.so.13</code>), and <code>ld</code> resolves <code>-lfoo</code>
-strictly through <code>libfoo.so</code>, so each kernel module failed on a
-different library in turn. Bridge the whole directory once.</li>
-<li><b>The display drifts.</b> Windows holds 0.7–1.8 GiB of the card and it moves
-between boots. At a 10 GiB offload budget the FP8 weights tipped into
-<code>Available KV cache memory: -1.53 GiB</code> and refused to start. 0.93 is
-the practical <code>gpu-memory-utilization</code> ceiling here.</li>
-</ul>
-
-<h3>9. Making her able to do the job at all</h3>
-<ul>
-<li><b>She said she had no internet — she had tools she never saw.</b> Pi lists a
-skill by description and leaves opening it to the model. She saw <code>rig-tools</code>,
-tried to curl Google, hit a CAPTCHA, and concluded the network was unavailable.
-The commands now sit in her system prompt where they cannot be missed.</li>
-<li><b>A Windows path silently became a relative one.</b> <code>C:\Users\...</code>
-is not absolute to Pi, so it was glued onto the working directory. The file was
-never found, which read exactly like "she cannot see images".</li>
-<li><b>Background sessions produced nothing at all.</b> Zero-byte log, no files.
-Detached runs inherit a stdin that never delivers EOF, so Pi waited forever.
-<code>&lt;/dev/null</code> on the headless exec.</li>
-<li><b>She looped verbatim until she hit the token cap.</b> The driver exported
-<code>GEMMA4_FREQUENCY_PENALTY</code> — and nothing read it. There was no
-anti-repetition measure anywhere. Now applied server-side, so every client gets it.</li>
-<li><b>Give her more turns, not fewer.</b> The units she completed on turn 7–10
-were the hard ones. Cutting at 6 turns does not save time; it discards
-nearly-finished work and reruns it from scratch.</li>
-</ul>
-
-<h3>10. The one habit that found all of it</h3>
-<p>Every item above was found the same way: <b>reproduce the failure, then measure
-the fix</b>. Not "the model seems weak" but "8 of 100 answers were truncated, and
-74 + 8 = 82 which is the published mark". Not "offloading should be slower" but
-97 → 180 tok/s on the same prompts. The two times measurement was skipped —
-trusting a ledger that said 33/33, and reporting a pass from an n=8 sample — both
-produced claims that were simply false.</p>
-<div class="note">And when a number cannot be reached honestly, say so. GPQA at
-73% against a published 82.3% is a real gap on a quantized model, not a harness
-bug — dressing that up would have wasted more time than admitting it.</div>
-<h3>11. The bugs live in the seams, not in either system</h3>
-<p>Six failures came from joining Gemini CLI to vLLM, and not one was in Gemini
-CLI or in vLLM. Both were behaving correctly; the loss was entirely in the
-translation between them. The most expensive was the streaming tool-call bug,
-where vLLM had been returning <code>read_file</code> with the right arguments all
-along and the gateway was shredding it into nameless fragments. The diagnosis
-that mattered was testing vLLM <em>directly</em> with a hand-built request — the
-moment that came back correct, the search space collapsed to one file.</p>
-<div class="note">A second, sharper version of the same lesson: my first fix for
-the schema bug did not work, because I trusted a field named
-<code>responseJsonSchema</code> to contain JSON Schema. It contains OpenAPI. Check
-what is in the field, not what the field is called.</div>
-
-<h3>12. TurboQuant compresses the cache, not the weights</h3>
-<p>Worth being precise about, because the name gets used loosely. The paper
-(<em>TurboQuant</em>, Google Research, ICLR 2026) has no weight-quantization
-experiment in it at all. It quantizes KV-cache vectors and retrieval embeddings.
-Pointing it at a 26B checkpoint does nothing to the checkpoint.</p>
-<p>The mechanism is genuinely elegant, and it is what makes the rest of this
-section make sense: multiply each vector by a random orthogonal matrix, which
-forces every coordinate into a predictable bell curve, then apply a scalar
-quantizer tuned for exactly that distribution. Because the rotation is orthogonal
-it loses no information and inverts exactly from a stored seed — the compression
-is entirely in the rounding. And because the rotation <em>makes</em> the
-distribution knowable rather than assuming it, no calibration data is needed.</p>
-<p>That matters because real LLM tensors are not bell-curved — they have outliers
-orders of magnitude above the typical value, and one outlier forces the scale so
-wide that every ordinary value collapses into a couple of code points. The
-rotation spreads that outlier energy across all coordinates. It is not a
-compression step; it is what makes the compression step computable.</p>
-<table>
-<tr><th>KV setting</th><th>Context vs fp8</th><th>Stated PPL cost</th><th>Verdict</th></tr>
-<tr><td><code>fp8</code></td><td>baseline</td><td>—</td><td>the safe choice</td></tr>
-<tr><td><code>turboquant_k8v4</code></td><td>1.32×</td><td>+1.17%</td><td>conservative</td></tr>
-<tr><td><code>turboquant_4bit_nc</code></td><td>1.95×</td><td>+2.71%</td>
-    <td><span class="win">now the default on every profile</span></td></tr>
-<tr><td><code>turboquant_k3v4_nc</code></td><td>2.23×</td><td>+10.63%</td>
-    <td><span class="no">poor trade</span></td></tr>
-<tr><td><code>turboquant_3bit_nc</code></td><td>2.59×</td><td>+20.59%</td>
-    <td><span class="no">too costly</span></td></tr>
-</table>
-<p>Finding this also exposed a live bug: the <code>fast</code> profile set no KV
-dtype at all, so it had been running bf16 KV — the most expensive option — on the
-profile with the largest context.</p>
-<div class="note">Those PPL figures are vLLM's own, measured on Llama and
-Ministral. They are <em>not</em> measured on Gemma and not on this card. The
-default is the best available guess, not a result. Red Hat's independent
-evaluation is harsher than the published numbers on the aggressive presets, which
-is a reason to stay at <code>4bit_nc</code> or below. The thing to watch when
-measuring: turboquant forces FlashAttention 2, and FA2 is not always FA3's equal
-on Blackwell, so a regression would appear in prefill before decode.</div>
-
-<h3>13. Going below 4-bit is a dead end for this model, for two separate reasons</h3>
-<p>The obvious idea — if 4-bit works, try 3-bit — fails twice over, and it is
-worth writing down because the reasoning is not intuitive.</p>
-<p><strong>vLLM will not do it.</strong> The compressed-tensors format packs 1–8
-bits and the schemes exist, but both MoE code paths reject anything that is not
-4 or 8 (<code>assert self.num_bits == 4 or self.num_bits == 8</code>). Since
-routed experts are roughly 89% of a 26B-A4B, a working 3-bit path would only
-shrink the parts that are not the problem.</p>
-<p><strong>And it would be slower.</strong> This is the part that inverts the
-intuition: the tensor-core instruction is selected by the <em>activation</em>
-dtype, not the weight dtype. Two-bit weights with 16-bit activations run at
-16-bit speed. Fewer weight bits buy memory bandwidth and nothing else, which
-helps only at batch 1. On Blackwell, NVFP4 is the only format that reaches the
-FP4 tensor cores, and it measures <strong>31% faster than 4-bit AWQ+Marlin at the
-same bit width</strong> with 56% lower time-to-first-token. Swapping it for
-something smaller would be slower at any real concurrency.</p>
-<div class="note">Also confirmed by reading the startup log rather than assuming:
-this rig is on <code>FlashInferCutlassNvFp4LinearKernel</code> with an sm_120
-autotune cache hit — the native FP4 path, not the Marlin fallback. That fallback
-is a one-line warning, and taking it silently means paying NVFP4's accuracy cost
-at Marlin's speed. The check is now written into <code>serve_vllm.sh</code> next
-to the flag that depends on it.</div>
-
-<h3>14. The failure that returns a wrong answer instead of an error</h3>
-<p>Expert CPU-offload combined with a 4-bit MoE checkpoint, on this exact stack —
-sm_120 under WSL — loads without complaint, runs without error, and returns
-<code>""</code> or <code>"."</code> where the answer belongs, on every MoE backend
-(vLLM #38718, still open). The companion report of the same combination crashing
-outright was closed <code>not_planned</code> after 90 days with no maintainer
-reply. vLLM additionally drops to <code>pin_memory=False</code> under WSL, so the
-path is degraded here by design.</p>
-<p>This rig was never exposed, by luck rather than judgement: the quality profile
-offloads experts on an <em>FP8</em> checkpoint, where offload is fine — and where
-it measured <em>faster</em>, 97 → 180 tok/s at twice the context, because the
-freed VRAM allowed full CUDA-graph capture. The launcher now refuses the
-combination that corrupts and says why.</p>
-<div class="note">Silent wrong answers are the worst failure this rig can have.
-Every other lesson in this document was found because something visibly broke.
-This one would have been found by nobody, and would have quietly poisoned a
-33-unit bug wave. When a configuration is known to fail silently, the fix is not
-a note in a document — it is a refusal in the code.</div>
-
-<h3>15. What to keep</h3>
-<p>The settings from all of the above that are worth carrying to any similar rig:</p>
-<table>
-<tr><th>Setting</th><th>Why</th></tr>
-<tr><td><code>--enable-prefix-caching</code>, explicitly</td>
-    <td>Agent traffic resends a near-identical prefix every turn — system prompt,
-        tool declarations, workspace listing, history. 99.6% hit rate on repeated
-        prompts. It was on only by <em>absence</em> of the disable flag, which is one
-        upstream default-flip away from silently turning off, and the only symptom
-        would be "everything got slower".</td></tr>
-<tr><td><code>KV_DTYPE=turboquant_4bit_nc</code></td>
-    <td>~2× the context of fp8 for a few percent of perplexity. The cheapest
-        context on a card already full of weights.</td></tr>
-<tr><td>NVFP4 weights, and check the kernel</td>
-    <td>The only 4-bit format reaching Blackwell's FP4 tensor cores. Verify from the
-        log; the fallback is silent.</td></tr>
-<tr><td>FP8 weights when accuracy is the job</td>
-    <td>Measured on identical protocol: MMLU-Pro <strong>82.86%</strong> at FP8 vs
-        <strong>79.71%</strong> at NVFP4. That 3.15-point gap is quantization, not
-        the harness and not the kernel — the same benchmark passes the published
-        82.6% mark at FP8.</td></tr>
-<tr><td>Expert offload — but only on FP8</td>
-    <td>Faster, not slower, and it doubles the context. Never with a 4-bit MoE.</td></tr>
-<tr><td>The gateway, not a fork</td>
-    <td>A few hundred lines of translation buys the entire Gemini CLI feature set and
-        survives every upstream release. A fork would have to be re-merged forever.</td></tr>
-</table>
-
-<h2>Where things live</h2>
-<table>
-<tr><td><code>/path/to/Harness</code></td><td>all scripts, tests, profiles</td></tr>
-<tr><td><code>$HOME/.pi/agent/sessions/</code></td><td>every conversation, prompts + replies + tool calls</td></tr>
-<tr><td><code>$HOME/gemma-logs/</code></td><td>server log per boot, wave events, benchmark results</td></tr>
-<tr><td><code>Desktop/status.html</code></td><td>live status — what is running right now</td></tr>
-</table>
-
-<p class="sub">Stoneforge Labs · open experiments, measured honestly.</p>
+    <p class="section-intro">Evidence policy: a vendor table is context, not a local result. Failed and interrupted runs are excluded from headline numbers.</p>
+  </section>
 </main>
+
+<footer>
+  <p>Stoneforge Labs · open systems work, measured locally.</p>
+  <p><a href="https://github.com/Stoneforge-Labs">GitHub</a> · <a href="https://huggingface.co/StoneforgeLabs">Hugging Face</a> · <a href="LICENSE">MIT License</a></p>
+</footer>
 </body>
 </html>
