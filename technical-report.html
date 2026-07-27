@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A reproducible systems report on serving and evaluating Gemma 4 models locally and connecting them to Gemini CLI on one RTX 5090.">
+<meta name="author" content="Jayson Stone">
+<meta name="citation_title" content="Running Gemma 4 Locally: Serving, Evaluation, and Gemini CLI Integration on a Single RTX 5090">
+<meta name="citation_author" content="Jayson Stone">
+<meta name="citation_publication_date" content="2026/07/27">
+<meta name="citation_technical_report_institution" content="Stoneforge Labs">
+<meta name="citation_technical_report_number" content="SFL-TR-2026-01">
+<meta name="citation_pdf_url" content="https://stoneforge-labs.github.io/gemma-rig/gemma-rig-technical-report.pdf">
+<meta name="citation_language" content="en">
+<meta name="citation_keywords" content="Gemma 4; local inference; vLLM; model evaluation; Gemini CLI; RTX 5090">
+<meta name="DC.title" content="Running Gemma 4 Locally: Serving, Evaluation, and Gemini CLI Integration on a Single RTX 5090">
+<meta name="DC.creator" content="Jayson Stone">
+<meta name="DC.date" content="2026-07-27">
+<meta name="DC.publisher" content="Stoneforge Labs">
+<meta name="DC.type" content="Text">
+<meta name="DC.format" content="text/html">
+<link rel="canonical" href="https://stoneforge-labs.github.io/gemma-rig/technical-report.html">
+<title>Running Gemma 4 Locally: Serving, Evaluation, and Gemini CLI Integration on a Single RTX 5090</title>
+<style>
+  :root { color-scheme: light; --ink: #161616; --muted: #565656; --line: #c9c9c9; --link: #164fa3; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    max-width: 850px;
+    margin: 0 auto;
+    padding: 52px 36px 72px;
+    color: var(--ink);
+    background: #fff;
+    font: 17px/1.58 Georgia, "Times New Roman", serif;
+  }
+  a { color: var(--link); text-underline-offset: 2px; }
+  h1, h2, h3, .meta, nav, table, .label {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  h1 {
+    margin: 0 0 22px;
+    font-size: 38px;
+    line-height: 1.14;
+    letter-spacing: -.02em;
+  }
+  h2 {
+    margin: 42px 0 12px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 24px;
+  }
+  h3 { margin: 28px 0 8px; font-size: 18px; }
+  p { margin: 10px 0 16px; }
+  .author { margin: 0; font: 700 19px/1.4 Arial, Helvetica, sans-serif; }
+  .meta { margin: 5px 0; color: var(--muted); font-size: 14px; }
+  .abstract { margin: 32px 0; padding: 20px 24px; border: 1px solid var(--line); }
+  .abstract h2 { margin: 0 0 8px; padding: 0; border: 0; font-size: 18px; }
+  .abstract p { margin-bottom: 0; }
+  .label { font-weight: 700; }
+  nav { margin: 24px 0; font-size: 14px; }
+  nav a { margin-right: 16px; }
+  .table-wrap { overflow-x: auto; margin: 18px 0 24px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.4; }
+  th, td { padding: 9px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { background: #f2f2f2; }
+  code { font: .88em Consolas, "Courier New", monospace; }
+  pre {
+    overflow-x: auto;
+    padding: 15px;
+    border: 1px solid var(--line);
+    background: #f7f7f7;
+    font: 13px/1.55 Consolas, "Courier New", monospace;
+  }
+  ul, ol { padding-left: 25px; }
+  li { margin: 7px 0; }
+  .references li { margin-bottom: 12px; overflow-wrap: anywhere; }
+  .paper-nav { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 34px; }
+  footer { margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 600px) {
+    body { padding: 28px 20px 50px; }
+    h1 { font-size: 30px; }
+    .paper-nav { display: block; }
+  }
+  @page { size: letter; margin: .72in; }
+  @media print {
+    body { max-width: none; padding: 0; font-size: 10.5pt; line-height: 1.42; }
+    .paper-nav { display: none; }
+    h1 { font-size: 24pt; }
+    h2 { margin-top: 24px; font-size: 15pt; break-after: avoid; }
+    h3 { font-size: 12pt; break-after: avoid; }
+    table, pre, .abstract { break-inside: avoid; }
+    a { color: inherit; text-decoration: none; }
+    a[href]::after { content: none; }
+    footer { font-size: 9pt; }
+  }
+</style>
+</head>
+<body>
+<nav class="paper-nav" aria-label="Report links">
+  <a href="index.html">Gemma Rig project page</a>
+  <span><a href="gemma-rig-technical-report.pdf">Download PDF</a> · <a href="https://github.com/Stoneforge-Labs/gemma-rig">Source</a></span>
+</nav>
+
+<article>
+  <header>
+    <h1>Running Gemma 4 Locally: Serving, Evaluation, and Gemini CLI Integration on a Single RTX 5090</h1>
+    <p class="author">Jayson Stone</p>
+    <p class="meta">Stoneforge Labs</p>
+    <p class="meta">Technical Report SFL-TR-2026-01 · July 27, 2026 · Version 1.0</p>
+  </header>
+
+  <section class="abstract">
+    <h2>Abstract</h2>
+    <p>This report documents a local Gemma 4 inference and agent stack built on one NVIDIA GeForce RTX 5090 under WSL2. Three quantized operating points were measured with vLLM 0.25.1: a 26B-A4B FP8 checkpoint reached 180 output tokens per second at 32k context after cold-expert offload; a 26B-A4B NVFP4 checkpoint reached 189 tokens per second at 64k context; and a dense 31B NVFP4 checkpoint reached 63 tokens per second at 32k context. On MMLU-Pro with a five-shot chat-template protocol, the 26B FP8 checkpoint scored 82.86% and its NVFP4 counterpart scored 79.71%. A small Rust gateway connects the upstream Gemini CLI to the local vLLM OpenAI-compatible endpoint while preserving tool calls, structured responses, streaming, reasoning fields, and token counts. The report separates independently reproduced results from failed or confounded runs and records the engineering changes that made the stack reliable.</p>
+  </section>
+
+  <p><span class="label">Keywords:</span> Gemma 4, local inference, vLLM, MMLU-Pro, model evaluation, Gemini CLI, RTX 5090, open-source systems.</p>
+
+  <h2>1. Scope</h2>
+  <p>The goal was practical: run capable open-weight models locally, measure the configurations that fit a single workstation GPU, and use those models through an existing coding-agent interface. The work therefore covers both inference performance and the surrounding system required for repeatable use. It is not a general ranking of Gemma 4 checkpoints or serving engines.</p>
+  <p>Only results reproduced on the reported machine are treated as findings. Vendor figures are comparison context. Interrupted, truncated, or concurrently contaminated runs are excluded rather than repaired statistically.</p>
+
+  <h2>2. System and model configurations</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Component</th><th>Configuration</th></tr></thead>
+      <tbody>
+        <tr><td>GPU</td><td>NVIDIA GeForce RTX 5090</td></tr>
+        <tr><td>Host environment</td><td>Windows Subsystem for Linux 2</td></tr>
+        <tr><td>Serving engine</td><td>vLLM 0.25.1, OpenAI-compatible HTTP endpoint</td></tr>
+        <tr><td>Fast profile</td><td>Gemma 4 26B-A4B instruction model, NVFP4 weights, FP8 KV cache, 64k context</td></tr>
+        <tr><td>Quality profile</td><td>Gemma 4 26B-A4B instruction model, dynamic FP8 weights, FP8 KV cache, 32k context, 64 cold experts offloaded</td></tr>
+        <tr><td>Smart profile</td><td>Gemma 4 31B dense instruction model, NVFP4 weights, FP8 KV cache, 32k context</td></tr>
+        <tr><td>Evaluation</td><td>EleutherAI lm-evaluation-harness; MMLU-Pro; five-shot; model chat template</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The serving profiles are operating points, not claims that one quantization is best for every workload. Context length, CUDA-graph capture, KV-cache format, model density, and expert placement all affect the final behavior.</p>
+
+  <h2>3. Method</h2>
+  <h3>3.1 Serving measurements</h3>
+  <p>Decode throughput was measured with the same local serving benchmark against a quiet GPU. Reported values are batch-one output-token rates unless stated otherwise. Each retained row came from a configuration that booted cleanly and completed independently. Startup logs were retained to identify the selected kernel and to confirm model, context, cache, and graph-capture settings.</p>
+
+  <h3>3.2 Accuracy measurements</h3>
+  <p>MMLU-Pro was run through lm-evaluation-harness using five examples and the checkpoint chat template. The FP8 and NVFP4 26B-A4B measurements used the same protocol, so their 3.15-point difference is a within-system comparison. The published 82.6% Gemma 4 result is included only as external context; the local 82.86% result is not presented as evidence of a statistically meaningful improvement.</p>
+
+  <h3>3.3 Evidence policy</h3>
+  <p>A broad checkpoint sweep was rejected after inspection found three independent confounders: an 8k output truncation, a 7,200-second timeout, and interactive boots that displaced models under measurement. Those rows do not appear in the headline table. The retained numbers were rerun outside the compromised sweep.</p>
+
+  <h2>4. Results</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Configuration or measurement</th><th>Result</th><th>Evidence</th></tr></thead>
+      <tbody>
+        <tr><td>26B-A4B FP8 with expert offload</td><td><strong>180 tok/s at 32k</strong></td><td>Serving benchmark, quiet GPU</td></tr>
+        <tr><td>26B-A4B NVFP4</td><td><strong>189 tok/s at 64k</strong></td><td>Same serving benchmark</td></tr>
+        <tr><td>31B dense NVFP4</td><td><strong>63 tok/s at 32k</strong></td><td>Same serving benchmark</td></tr>
+        <tr><td>MMLU-Pro, 26B-A4B FP8</td><td><strong>82.86%</strong></td><td>Five-shot, chat template</td></tr>
+        <tr><td>MMLU-Pro, 26B-A4B NVFP4</td><td><strong>79.71%</strong></td><td>Identical protocol</td></tr>
+        <tr><td>NVFP4 accuracy difference</td><td>−3.15 percentage points</td><td>Difference between preceding rows</td></tr>
+        <tr><td>Expert-offload change</td><td>97 → 180 tok/s</td><td>Before and after full CUDA-graph capture became possible</td></tr>
+        <tr><td>Repeated agent prompts</td><td>99.6% prefix-cache hit rate</td><td>Serving telemetry</td></tr>
+        <tr><td>NVFP4 execution path</td><td><code>FlashInferCutlassNvFp4LinearKernel</code></td><td>vLLM startup log</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>The local FP8 MMLU-Pro result closely matches the published Gemma 4 figure. The measured NVFP4 checkpoint provided the fastest decode rate and longest context of the three profiles, with a visible accuracy cost under the chosen evaluation. The dense 31B profile traded throughput for a different model architecture and was retained as a slower operating point rather than described as universally smarter.</p>
+
+  <h2>5. Local Gemini CLI integration</h2>
+  <p>Gemma Gateway is a roughly 1,300-line Rust compatibility bridge. It accepts the Gemini REST request shape used by the open-source Gemini CLI, translates it to vLLM's OpenAI-compatible interface, and maps responses back to the Gemini shape. The gateway covers text and image inputs, tool calls, JSON schemas, streaming, reasoning content, token accounting, and model discovery from the upstream <code>/models</code> endpoint. The public repository includes 31 translation tests and a live-model verifier.</p>
+
+  <pre aria-label="Local agent request path">Gemini CLI / gemma launcher
+        |
+        v
+Gemma Gateway :8899  ----  local MCP tools
+        |
+        v
+vLLM :8891  ----  Gemma 4 checkpoint
+
+Workspace  ----  CodeGraph index</pre>
+
+  <p>This arrangement keeps the upstream CLI intact. A local launcher selects the profile, starts vLLM, attaches user-supplied files or images, exposes status, and records logs. Workspace-side CodeGraph indexing can supply relevant source, call paths, and change blast radius before edits; it is external tooling and is not part of the model weights.</p>
+
+  <h2>6. Engineering findings</h2>
+  <h3>6.1 Expert placement changed the usable performance envelope</h3>
+  <p>Observed routing was not uniform: the hottest expert received 5.6 times as many selections as the coldest, while no expert was unused. Offloading the 64 coldest experts freed enough VRAM for full CUDA-graph capture. On this configuration, that gain outweighed the transfer cost and raised measured decode throughput from 97 to 180 tokens per second while the configured context doubled.</p>
+
+  <h3>6.2 The tested TurboQuant KV-cache presets were incompatible</h3>
+  <p>Four attempted TurboQuant presets failed when multimodal Gemma 4 selected <code>TRITON_ATTN</code>, which rejected the KV-cache data type. The profiles therefore use FP8 KV cache as the verified default. A boot failure is not counted as a performance result.</p>
+
+  <h3>6.3 Reasoning output changes time-to-first-token accounting</h3>
+  <p>Some responses emit their first token in <code>reasoning_content</code> rather than <code>content</code>. The measurement path was updated to count the first token from either field; otherwise, reasoning-enabled configurations appear to have an artificially high time to first token.</p>
+
+  <h3>6.4 Interactive boots and measurement sweeps require mutual exclusion</h3>
+  <p>An interactive boot can evict the checkpoint currently being measured and create false serving failures. The launcher now refuses that conflict. This is a system-level validity control: a benchmark is only useful when the process under measurement remains the intended one.</p>
+
+  <h2>7. Limitations</h2>
+  <ul>
+    <li>The measurements come from one RTX 5090 workstation under WSL2; driver, kernel, thermal, and host differences may change results.</li>
+    <li>Throughput values describe selected batch-one decode workloads, not maximum aggregate server throughput.</li>
+    <li>The checkpoints come from different publishers and quantization pipelines. Weight format alone does not explain every observed difference.</li>
+    <li>MMLU-Pro is one benchmark. Its score does not measure every capability needed for agent or coding work.</li>
+    <li>The prefix-cache figure reflects repeated prompts in this local agent workload and should not be generalized to unrelated traffic.</li>
+    <li>Excluded sweep rows are not available as valid comparisons. This report favors a smaller defensible result set over a larger contaminated matrix.</li>
+  </ul>
+
+  <h2>8. Artifacts and reproduction</h2>
+  <ul>
+    <li><a href="https://stoneforge-labs.github.io/gemma-rig/">Gemma Rig project page and current commands</a></li>
+    <li><a href="https://github.com/Stoneforge-Labs/gemma-rig">Report source and version history</a></li>
+    <li><a href="https://github.com/Stoneforge-Labs/gemma-gateway">Gemma Gateway source, tests, and live verifier</a></li>
+    <li><a href="https://huggingface.co/unsloth/gemma-4-26B-A4B-it-NVFP4">26B-A4B NVFP4 checkpoint</a></li>
+    <li><a href="https://huggingface.co/RedHatAI/gemma-4-26B-A4B-it-FP8-dynamic">26B-A4B FP8 checkpoint</a></li>
+    <li><a href="https://huggingface.co/RedHatAI/gemma-4-31B-it-NVFP4">31B dense NVFP4 checkpoint</a></li>
+  </ul>
+  <p>The repository history is the record of changes to this report. Reproduction should preserve the reported checkpoint, serving version, context, KV-cache format, graph-capture state, and evaluation protocol; omitting any of those can change the comparison.</p>
+
+  <h2>References</h2>
+  <ol class="references">
+    <li>Gemma Team. “Gemma 4 Technical Report.” arXiv:2607.02770, 2026. <a href="https://arxiv.org/abs/2607.02770">https://arxiv.org/abs/2607.02770</a>.</li>
+    <li>Google DeepMind. “Gemma 4.” 2026. <a href="https://deepmind.google/models/gemma/gemma-4/">https://deepmind.google/models/gemma/gemma-4/</a>.</li>
+    <li>Yubo Wang et al. “MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark.” arXiv:2406.01574, 2024. <a href="https://arxiv.org/abs/2406.01574">https://arxiv.org/abs/2406.01574</a>.</li>
+    <li>EleutherAI. “Language Model Evaluation Harness.” <a href="https://github.com/EleutherAI/lm-evaluation-harness">https://github.com/EleutherAI/lm-evaluation-harness</a>.</li>
+    <li>Woosuk Kwon et al. “Efficient Memory Management for Large Language Model Serving with PagedAttention.” arXiv:2309.06180, 2023. <a href="https://arxiv.org/abs/2309.06180">https://arxiv.org/abs/2309.06180</a>.</li>
+    <li>vLLM Project. “OpenAI-Compatible Server.” <a href="https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/">https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/</a>.</li>
+    <li>Google. “Gemini CLI.” <a href="https://github.com/google-gemini/gemini-cli">https://github.com/google-gemini/gemini-cli</a>.</li>
+    <li>Jayson Stone. “Gemma Gateway.” Stoneforge Labs, 2026. <a href="https://github.com/Stoneforge-Labs/gemma-gateway">https://github.com/Stoneforge-Labs/gemma-gateway</a>.</li>
+  </ol>
+</article>
+
+<footer>
+  © 2026 Jayson Stone · Stoneforge Labs · <a href="https://scholar.google.com/citations?user=SrzMV7sAAAAJ&amp;hl=en">Google Scholar</a>
+</footer>
+</body>
+</html>
