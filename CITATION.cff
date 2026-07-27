@@ -1,0 +1,24 @@
+cff-version: 1.2.0
+message: "Please cite the technical report below when using these results."
+title: "Gemma Rig"
+abstract: "Local Gemma 4 serving, evaluation, and Gemini CLI integration on one RTX 5090."
+authors:
+  - family-names: "Stone"
+    given-names: "Jayson"
+version: "1.0.0"
+date-released: "2026-07-27"
+url: "https://stoneforge-labs.github.io/gemma-rig/"
+repository-code: "https://github.com/Stoneforge-Labs/gemma-rig"
+license: MIT
+preferred-citation:
+  type: report
+  title: "Running Gemma 4 Locally: Serving, Evaluation, and Gemini CLI Integration on a Single RTX 5090"
+  authors:
+    - family-names: "Stone"
+      given-names: "Jayson"
+  institution:
+    name: "Stoneforge Labs"
+  number: "SFL-TR-2026-01"
+  year: 2026
+  month: 7
+  url: "https://stoneforge-labs.github.io/gemma-rig/technical-report.html"
